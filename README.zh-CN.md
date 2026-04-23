@@ -48,7 +48,7 @@
 **A. 用户级安装（推荐，所有项目通用）**
 
 ```bash
-git clone https://github.com/pftom/auto-github-contributor.git /tmp/auto-github-contributor
+git clone https://github.com/nexu-io/auto-github-contributor.git /tmp/auto-github-contributor
 mkdir -p ~/.claude/commands ~/.claude/skills
 cp    /tmp/auto-github-contributor/commands/auto-contribute.md  ~/.claude/commands/
 cp -R /tmp/auto-github-contributor/skills/auto-github-contributor ~/.claude/skills/
@@ -61,7 +61,7 @@ cp -R /tmp/auto-github-contributor/skills/auto-github-contributor ~/.claude/skil
 在目标项目根目录下：
 
 ```bash
-git clone https://github.com/pftom/auto-github-contributor.git /tmp/auto-github-contributor
+git clone https://github.com/nexu-io/auto-github-contributor.git /tmp/auto-github-contributor
 mkdir -p .claude/commands .claude/skills
 cp    /tmp/auto-github-contributor/commands/auto-contribute.md  .claude/commands/
 cp -R /tmp/auto-github-contributor/skills/auto-github-contributor .claude/skills/

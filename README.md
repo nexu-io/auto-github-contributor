@@ -48,7 +48,7 @@ This repo ships the slash command (`commands/auto-contribute.md`) and the skill 
 **A. User-level (recommended — available in every project)**
 
 ```bash
-git clone https://github.com/pftom/auto-github-contributor.git /tmp/auto-github-contributor
+git clone https://github.com/nexu-io/auto-github-contributor.git /tmp/auto-github-contributor
 mkdir -p ~/.claude/commands ~/.claude/skills
 cp    /tmp/auto-github-contributor/commands/auto-contribute.md  ~/.claude/commands/
 cp -R /tmp/auto-github-contributor/skills/auto-github-contributor ~/.claude/skills/
@@ -61,7 +61,7 @@ Restart Claude Code. `/auto-contribute` appears as a slash command, and Claude c
 From the target repo's root:
 
 ```bash
-git clone https://github.com/pftom/auto-github-contributor.git /tmp/auto-github-contributor
+git clone https://github.com/nexu-io/auto-github-contributor.git /tmp/auto-github-contributor
 mkdir -p .claude/commands .claude/skills
 cp    /tmp/auto-github-contributor/commands/auto-contribute.md  .claude/commands/
 cp -R /tmp/auto-github-contributor/skills/auto-github-contributor .claude/skills/
