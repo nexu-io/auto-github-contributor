@@ -1,0 +1,10 @@
+{
+  "name": "auto-github-contributor",
+  "description": "Interactive end-to-end agent that finds quick-win contributions in any GitHub repo (issues + repo scan), runs a TDD dev-loop, and opens a PR via gh.",
+  "version": "0.2.0",
+  "author": {
+    "name": "Nexu",
+    "url": "https://github.com/nexu-io"
+  },
+  "homepage": "https://github.com/nexu-io/auto-github-contributor"
+}
