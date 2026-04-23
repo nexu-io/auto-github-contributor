@@ -2,6 +2,8 @@
 
 # auto-github-contributor
 
+![auto-github-contributor](./assets/cover_zh.png)
+
 一套 Claude Code skill + slash 命令：对任意 GitHub 仓库端到端跑通一次开源贡献流程 —— 自动发现 quick-win 候选（带标签的 issue + 仓库扫描），按 TDD 走 red/green/refactor 直到 lint/typecheck/tests 全绿，然后通过 `gh` 开 PR 并输出链接。
 
 一条 slash 命令，覆盖完整流水线，适用于任何仓库。
