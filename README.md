@@ -50,7 +50,7 @@ This repo ships as a Claude Code plugin (`.claude-plugin/plugin.json`). Two ways
 Clone the repo somewhere, then register it with Claude Code's plugin system:
 
 ```bash
-git clone https://github.com/nexu-io/auto-github-contributor.git ~/.claude/plugins/auto-github-contributor
+git clone https://github.com/pftom/auto-github-contributor.git ~/.claude/plugins/auto-github-contributor
 ```
 
 Restart Claude Code. The `/auto-contribute` slash command should now appear, and the `auto-github-contributor` skill becomes invokable.

@@ -3,8 +3,8 @@
   "description": "Interactive end-to-end agent that finds quick-win contributions in any GitHub repo (issues + repo scan), runs a TDD dev-loop, and opens a PR via gh.",
   "version": "0.2.0",
   "author": {
-    "name": "Nexu",
-    "url": "https://github.com/nexu-io"
+    "name": "pftom",
+    "url": "https://github.com/pftom"
   },
-  "homepage": "https://github.com/nexu-io/auto-github-contributor"
+  "homepage": "https://github.com/pftom/auto-github-contributor"
 }

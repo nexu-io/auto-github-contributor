@@ -50,7 +50,7 @@
 克隆本仓库到 Claude Code 插件目录：
 
 ```bash
-git clone https://github.com/nexu-io/auto-github-contributor.git ~/.claude/plugins/auto-github-contributor
+git clone https://github.com/pftom/auto-github-contributor.git ~/.claude/plugins/auto-github-contributor
 ```
 
 重启 Claude Code。之后 `/auto-contribute` slash 命令应当出现，`auto-github-contributor` skill 也可被 Claude 按需调用。
