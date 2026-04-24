@@ -2,6 +2,8 @@
 
 # auto-github-contributor
 
+![auto-github-contributor](./assets/cover_en.png)
+
 A Claude Code skill + slash command that takes any GitHub repo and drives a full OSS contribution pipeline end-to-end: discover a quick-win candidate (labeled issues + repo scan), run a TDD dev-loop until lint/typecheck/tests all pass, then open a PR via `gh` and print the URL.
 
 One slash command, full pipeline, any repo.
