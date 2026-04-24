@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
+
 # Phase-aware dev-loop checker. Invoked from the repo workdir.
+#
 # Phases:
-#   --phase red    → expect the newest test(s) to FAIL (proves coverage gap)
-#   --phase green  → install + lint + typecheck + test (must all pass)
-#   --phase final  → clean install + lint + typecheck + full tests + build
+# --phase red  → expect the newest test(s) to FAIL (proves coverage gap)
+# --phase green → install + lint + typecheck + test (must all pass)
+# --phase final → clean install + lint + typecheck + full tests + build
 #
 # Usage:
 #   dev-loop-check.sh --phase green [--workdir <dir>]
@@ -42,20 +44,20 @@ run() {
 
 # Pick the right package manager command based on lockfile.
 detect_install_cmd() {
-  if [[ -f pnpm-lock.yaml ]]; then echo "pnpm install --frozen-lockfile";
-  elif [[ -f yarn.lock ]]; then echo "yarn install --frozen-lockfile";
-  elif [[ -f package-lock.json ]]; then echo "npm ci";
-  elif [[ -f bun.lockb ]]; then echo "bun install --frozen-lockfile";
-  else echo "${AGC_INSTALL_CMD}";
+  if [[ -f pnpm-lock.yaml ]];     then echo "pnpm install --frozen-lockfile"
+  elif [[ -f yarn.lock ]];        then echo "yarn install --frozen-lockfile"
+  elif [[ -f package-lock.json ]]; then echo "npm ci"
+  elif [[ -f bun.lockb ]];        then echo "bun install --frozen-lockfile"
+  else                                 echo "${AGC_INSTALL_CMD}"
   fi
 }
 
 # Pick the JS package manager runner based on lockfile.
 detect_runner() {
-  if [[ -f pnpm-lock.yaml ]]; then echo "pnpm run";
-  elif [[ -f yarn.lock ]]; then echo "yarn";
-  elif [[ -f bun.lockb ]]; then echo "bun run";
-  else echo "npm run";
+  if [[ -f pnpm-lock.yaml ]]; then echo "pnpm run"
+  elif [[ -f yarn.lock ]];    then echo "yarn"
+  elif [[ -f bun.lockb ]];    then echo "bun run"
+  else                             echo "npm run"
   fi
 }
 
@@ -76,6 +78,7 @@ TEST_CMD="$(detect_script test "$AGC_TEST_CMD")"
 BUILD_CMD="$(detect_script build "$AGC_BUILD_CMD")"
 
 case "$PHASE" in
+
   red)
     # Red: run only the test suite. Expect non-zero (failing new test) — we
     # invert the exit code so a "correctly failing" red phase reports success.
@@ -90,24 +93,38 @@ case "$PHASE" in
     ;;
 
   green)
-    run "install" bash -lc "$INSTALL_CMD"
-    run "lint" bash -lc "$LINT_CMD"
-    run "typecheck" bash -lc "$TYPECHECK_CMD"
-    run "test" bash -lc "$TEST_CMD"
+    run "install"     bash -lc "$INSTALL_CMD"
+    run "lint"        bash -lc "$LINT_CMD"
+    run "typecheck"   bash -lc "$TYPECHECK_CMD"
+    run "test"        bash -lc "$TEST_CMD"
     ;;
 
   final)
-    run "install (clean)" bash -lc "$INSTALL_CMD"
-    run "lint" bash -lc "$LINT_CMD"
-    run "typecheck" bash -lc "$TYPECHECK_CMD"
-    run "test" bash -lc "$TEST_CMD"
-    run "build" bash -lc "$BUILD_CMD"
-    # TODO(auto-gh): repo-specific `verify` / e2e hook. Wire a shell command here
-    # once the target repo ships a stable e2e target (e.g. `pnpm test:e2e`).
+    run "install (clean)"  bash -lc "$INSTALL_CMD"
+    run "lint"             bash -lc "$LINT_CMD"
+    run "typecheck"        bash -lc "$TYPECHECK_CMD"
+    run "test"             bash -lc "$TEST_CMD"
+    run "build"            bash -lc "$BUILD_CMD"
+
+    # Wired e2e / verify hook if the target repo defines one.
+    # Looks for: test:e2e, test:e2e:ci, or a top-level `verify` script.
+    if [[ -f package.json ]]; then
+      E2E_SCRIPT="$(jq -r '
+        .scripts["test:e2e"] // .scripts["test:e2e:ci"] // .scripts.verify // empty
+      ' package.json 2>/dev/null || echo '')"
+      if [[ -n "$E2E_SCRIPT" ]] && [[ "$E2E_SCRIPT" != "null" ]]; then
+        RUNNER="$(detect_runner)"
+        run "e2e" bash -lc "$RUNNER $E2E_SCRIPT"
+      else
+        agc::log "e2e: no test:e2e / verify script found, skipping"
+      fi
+    fi
+
     agc::log "final verification complete"
     ;;
 
   *)
     agc::die "invalid phase: $PHASE (expected red|green|final)"
     ;;
+
 esac
