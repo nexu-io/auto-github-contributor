@@ -121,7 +121,18 @@ fi
 
 export ISSUE_NUMBER ISSUE_TITLE ISSUE_URL SPEC_SNIPPET TODO_SNIPPET SHOT_LIST BLOCKERS_SNIPPET
 
-python3 - "$TEMPLATE_DIR/PR-BODY.template.md" "$PR_BODY" <<'PY'
+PYTHON_CMD=()
+if command -v python3 >/dev/null 2>&1; then
+  PYTHON_CMD=(python3)
+elif command -v python >/dev/null 2>&1; then
+  PYTHON_CMD=(python)
+elif command -v py >/dev/null 2>&1; then
+  PYTHON_CMD=(py -3)
+else
+  agc::die "missing dependency: python3 (or python / py -3)"
+fi
+
+"${PYTHON_CMD[@]}" - "$TEMPLATE_DIR/PR-BODY.template.md" "$PR_BODY" <<'PY'
 import os, pathlib, sys
 src, dst = sys.argv[1], sys.argv[2]
 body = pathlib.Path(src).read_text()
