@@ -165,9 +165,9 @@ skills/auto-github-contributor/
     config.sh                       # shared env + helpers
     check-prereqs.sh                # gh/git/jq + auth check
     fetch-issues.sh                 # label-based issue discovery + ranking
-    scan-quick-wins.sh              # typo / missing-test / i18n / TODO scanner
+    scan-quick-wins.sh              # typo / missing-test / i18n / TODO scanner (ignores local .auto-pr metadata)
     setup-workspace.sh              # clone + feature branch
-    dev-loop-check.sh               # red/green/final phases, lockfile-aware
+    dev-loop-check.sh               # red/green/final phases, lockfile-aware, docs-only fallback
     browser-verify.sh               # visual-verification stub
     create-pr.sh                    # commit, push, open PR, render body
   templates/

@@ -39,14 +39,14 @@ if command -v rg >/dev/null 2>&1; then
   BACKEND="rg"
   SEARCH() {
     rg -n --no-heading --hidden \
-      --glob '!node_modules' --glob '!dist' --glob '!build' --glob '!.git' --glob '!.next' \
+      --glob '!node_modules' --glob '!dist' --glob '!build' --glob '!.git' --glob '!.next' --glob '!.auto-pr' \
       "$@"
   }
 else
   BACKEND="grep"
   SEARCH() {
     grep -rEn --binary-files=without-match \
-      --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=build --exclude-dir=.git \
+      --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=build --exclude-dir=.git --exclude-dir=.auto-pr \
       "$@"
   }
 fi
@@ -145,7 +145,7 @@ if [[ -d src ]] || [[ -d packages ]] || [[ -d lib ]]; then
   CANDIDATES="$(
     {
       find src packages lib -type f \( -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.jsx' \) 2>/dev/null || true
-    } | grep -Ev '(\.test\.|\.spec\.|__tests__|__mocks__|\.d\.ts$|node_modules|/dist/|/build/)' | head -n 200
+    } | grep -Ev '(\.test\.|\.spec\.|__tests__|__mocks__|\.d\.ts$|node_modules|/dist/|/build/|/\.auto-pr/)' | head -n 200
   )"
   count=0
   while IFS= read -r src_file; do
@@ -185,7 +185,7 @@ fi
 # containing multiple JSON files; flag any file that has fewer top-level keys
 # than the largest sibling (likely missing translations).
 echo "[]" > "$TMP/i18n.json"
-LOCALE_DIRS="$(find . -type d \( -name 'locales' -o -name 'locale' -o -name 'lang' -o -name 'i18n' -o -name 'translations' \) 2>/dev/null | grep -Ev 'node_modules|/dist/|/build/' | head -n 10)"
+LOCALE_DIRS="$(find . -type d \( -name 'locales' -o -name 'locale' -o -name 'lang' -o -name 'i18n' -o -name 'translations' \) 2>/dev/null | grep -Ev 'node_modules|/dist/|/build/|/\.auto-pr/' | head -n 10)"
 while IFS= read -r dir; do
   [[ -z "$dir" ]] && continue
   JSONS="$(find "$dir" -maxdepth 2 -type f -name '*.json' 2>/dev/null | head -n 20)"

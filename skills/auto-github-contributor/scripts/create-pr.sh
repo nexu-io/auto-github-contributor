@@ -72,6 +72,7 @@ fi
 # 1) Stage + commit if there are changes.
 if ! git diff --quiet || ! git diff --cached --quiet; then
   git add -A
+  git reset --quiet -- .auto-pr 2>/dev/null || true
   if [[ -n "$ISSUE_NUMBER" ]]; then
     COMMIT_MSG="${COMMIT_PREFIX}(#${ISSUE_NUMBER}): ${ISSUE_TITLE}
 

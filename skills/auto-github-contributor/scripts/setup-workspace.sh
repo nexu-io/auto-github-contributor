@@ -85,6 +85,12 @@ fi
 
 mkdir -p "$WORKDIR/.auto-pr/screenshots"
 
+EXCLUDE_FILE="$WORKDIR/.git/info/exclude"
+touch "$EXCLUDE_FILE"
+if ! grep -qxF '.auto-pr/' "$EXCLUDE_FILE" 2>/dev/null; then
+  printf '\n# auto-github-contributor local workflow metadata\n.auto-pr/\n' >> "$EXCLUDE_FILE"
+fi
+
 if [[ -n "$ISSUE_JSON" ]]; then
   printf '%s\n' "$ISSUE_JSON" > "$WORKDIR/.auto-pr/issue.json"
 fi

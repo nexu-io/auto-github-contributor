@@ -40,6 +40,63 @@ run() {
   fi
 }
 
+has_known_toolchain() {
+  [[ -f package.json ]] || [[ -f pnpm-lock.yaml ]] || [[ -f yarn.lock ]] || [[ -f package-lock.json ]] || [[ -f bun.lockb ]] || \
+  [[ -f pyproject.toml ]] || [[ -f requirements.txt ]] || [[ -f setup.py ]] || [[ -f go.mod ]] || [[ -f Cargo.toml ]] || \
+  [[ -f pom.xml ]] || [[ -f build.gradle ]] || [[ -f build.gradle.kts ]] || [[ -f Makefile ]] || [[ -f justfile ]] || \
+  [[ -f Gemfile ]] || [[ -f composer.json ]]
+}
+
+collect_changed_paths() {
+  {
+    git diff --name-only
+    git diff --cached --name-only
+    git ls-files --others --exclude-standard
+  } | sed '/^$/d' | sed 's#\\#/#g' | grep -Ev '^\.auto-pr/' | sort -u
+}
+
+is_docs_path() {
+  local path="$1"
+  case "$path" in
+    README|README.*|CHANGELOG|CHANGELOG.*|CONTRIBUTING|CONTRIBUTING.*|LICENSE|LICENSE.*|NOTICE|NOTICE.*) return 0 ;;
+    docs/*|.github/*) return 0 ;;
+    *.md|*.mdx|*.txt|*.rst|*.adoc|*.asciidoc|*.org) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+is_docs_only_change() {
+  local changed
+  changed="$(collect_changed_paths)"
+  [[ -n "$changed" ]] || return 1
+
+  while IFS= read -r path; do
+    [[ -z "$path" ]] && continue
+    is_docs_path "$path" || return 1
+  done <<<"$changed"
+
+  return 0
+}
+
+should_use_docs_only_checks() {
+  if is_docs_only_change; then
+    agc::log "docs-only change detected; using diff-based verification"
+    return 0
+  fi
+
+  if ! has_known_toolchain; then
+    agc::log "no supported build/test toolchain detected; using diff-based verification"
+    return 0
+  fi
+
+  return 1
+}
+
+run_docs_only_checks() {
+  run "diff (worktree)" git diff --check
+  run "diff (staged)" git diff --cached --check
+}
+
 # Pick the right package manager command based on lockfile.
 detect_install_cmd() {
   if [[ -f pnpm-lock.yaml ]]; then echo "pnpm install --frozen-lockfile";
@@ -77,6 +134,10 @@ BUILD_CMD="$(detect_script build "$AGC_BUILD_CMD")"
 
 case "$PHASE" in
   red)
+    if should_use_docs_only_checks; then
+      agc::log "red phase not applicable for docs-only / no-toolchain verification"
+      exit 0
+    fi
     # Red: run only the test suite. Expect non-zero (failing new test) — we
     # invert the exit code so a "correctly failing" red phase reports success.
     agc::log "red phase: expecting test failure"
@@ -90,6 +151,10 @@ case "$PHASE" in
     ;;
 
   green)
+    if should_use_docs_only_checks; then
+      run_docs_only_checks
+      exit 0
+    fi
     run "install" bash -lc "$INSTALL_CMD"
     run "lint" bash -lc "$LINT_CMD"
     run "typecheck" bash -lc "$TYPECHECK_CMD"
@@ -97,6 +162,11 @@ case "$PHASE" in
     ;;
 
   final)
+    if should_use_docs_only_checks; then
+      run_docs_only_checks
+      agc::log "final verification complete"
+      exit 0
+    fi
     run "install (clean)" bash -lc "$INSTALL_CMD"
     run "lint" bash -lc "$LINT_CMD"
     run "typecheck" bash -lc "$TYPECHECK_CMD"
