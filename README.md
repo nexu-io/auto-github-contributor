@@ -88,13 +88,13 @@ Override defaults via env vars before launching Claude Code (or export them in y
 | Variable | Default | Purpose |
 |---|---|---|
 | `TARGET_REPO` | _(prompted)_ | `owner/name` of the upstream |
-| `TARGET_FORK` | _(empty → push to origin)_ | Where to push the feature branch |
+| `TARGET_FORK` | _(empty → push to origin)_ | Fork owner to push to (preferred), or legacy `owner/repo` |
 | `AGC_BASE_BRANCH` | `main` | Base branch for the PR |
 | `AGC_WORK_ROOT` | `$HOME/auto-gh-contrib-work` | Where workdirs get cloned |
 | `AGC_LABELS` | `good first issue,help wanted,documentation,good-first-issue` | Issue labels to search |
 | `AGC_ISSUE_LIMIT` | `30` | Max issues per label |
 | `AGC_INSTALL_CMD` / `AGC_LINT_CMD` / `AGC_TYPECHECK_CMD` / `AGC_TEST_CMD` / `AGC_BUILD_CMD` | pnpm-flavored | Fallback dev-loop commands (overridden by lockfile detection) |
-| `AGC_DEV_URL` | `http://localhost:5173` | URL for browser-verify stub |
+| `AGC_DEV_URL` | `http://localhost:5173` | URL used by browser verification (Playwright first, stub fallback) |
 
 ## How to test
 
@@ -128,6 +128,10 @@ bash -n "$SKILL_DIR/setup-workspace.sh"
 bash -n "$SKILL_DIR/dev-loop-check.sh"
 bash -n "$SKILL_DIR/create-pr.sh"
 bash -n "$SKILL_DIR/browser-verify.sh"
+
+# 5. Windows-friendly regression checks (no bash required)
+powershell -ExecutionPolicy Bypass -File tests/run-shell-workflow-smoke.ps1
+# expect: PASS (shell workflow invariants validated)
 ```
 
 ### Layer 2 — Slash command + skill loading
@@ -153,7 +157,7 @@ Create a throwaway repo you own (e.g. `your-handle/agc-sandbox`) with a known qu
 
 Pick the typo from the list, approve, and let the skill drive through to a real PR. Close the PR once you've verified the flow.
 
-Tip: set `TARGET_FORK=your-handle/agc-sandbox` so it pushes to the same repo (branch) instead of prompting about origin.
+Tip: set `TARGET_FORK=your-handle` so it pushes to your fork with the same repo name. Legacy `your-handle/agc-sandbox` also still works.
 
 ## How it works
 
@@ -165,10 +169,10 @@ skills/auto-github-contributor/
     config.sh                       # shared env + helpers
     check-prereqs.sh                # gh/git/jq + auth check
     fetch-issues.sh                 # label-based issue discovery + ranking
-    scan-quick-wins.sh              # typo / missing-test / i18n / TODO scanner
+    scan-quick-wins.sh              # typo / missing-test / i18n / TODO scanner (ignores local .auto-pr metadata)
     setup-workspace.sh              # clone + feature branch
-    dev-loop-check.sh               # red/green/final phases, lockfile-aware
-    browser-verify.sh               # visual-verification stub
+    dev-loop-check.sh               # red/green/final phases, lockfile-aware, docs-only fallback
+    browser-verify.sh               # visual verification (Playwright attempt, stub fallback)
     create-pr.sh                    # commit, push, open PR, render body
   templates/
     SPEC.template.md                # problem / acceptance / approach / risk
@@ -187,7 +191,7 @@ Contributions welcome. The most valuable additions right now:
    - unused exports (ts-prune-style)
    - missing JSDoc on public APIs
    - outdated dependency pins in a package.json section
-2. **Browser-verify backend** — `browser-verify.sh` is a deliberate stub. Wire up a Playwright / Puppeteer / chrome-devtools MCP backend so UI changes get screenshotted before the PR.
+2. **Browser-verify backend** — `browser-verify.sh` now auto-attempts Playwright via `npx` and falls back to a stub note. A stronger Puppeteer / chrome-devtools MCP backend would still improve reliability.
 3. **Language/framework dev-loops** — `dev-loop-check.sh` currently detects JS package managers. Add Python (`uv`/`poetry`/`pip`), Go, Rust, etc.
 4. **Cost estimator** — the picklist cost numbers are hand-waved rules of thumb. A smarter estimator (token-weighted file size × action kind) would help users pick more confidently.
 

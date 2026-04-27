@@ -6,7 +6,8 @@
 # Reads:
 #   <workdir>/.auto-pr/SPEC.md
 #   <workdir>/.auto-pr/TODO.md
-#   <workdir>/.auto-pr/screenshots/*.png  (optional)
+#   <workdir>/.auto-pr/screenshots/*.png       (optional)
+#   <workdir>/.auto-pr/screenshots/*.stub.txt  (optional)
 #   <workdir>/.auto-pr/BLOCKERS.md        (optional)
 #   <workdir>/.auto-pr/issue.json         (optional — only if started from an issue)
 # Writes:
@@ -72,6 +73,7 @@ fi
 # 1) Stage + commit if there are changes.
 if ! git diff --quiet || ! git diff --cached --quiet; then
   git add -A
+  git reset --quiet -- .auto-pr 2>/dev/null || true
   if [[ -n "$ISSUE_NUMBER" ]]; then
     COMMIT_MSG="${COMMIT_PREFIX}(#${ISSUE_NUMBER}): ${ISSUE_TITLE}
 
@@ -111,7 +113,13 @@ for f in "$WORKDIR"/.auto-pr/screenshots/*.png; do
   [[ -e "$f" ]] || continue
   SHOT_LIST+=$'\n'"- \`$(basename "$f")\`"
 done
-[[ -z "$SHOT_LIST" ]] && SHOT_LIST=$'\n'"_No screenshots captured (stub or non-UI change)._"
+for f in "$WORKDIR"/.auto-pr/screenshots/*.stub.txt; do
+  [[ -e "$f" ]] || continue
+  STUB_REASON="$(sed -n '1s/^# *//p' "$f" | sed -e 's/[[:space:]]*$//')"
+  [[ -z "$STUB_REASON" ]] && STUB_REASON="browser-verify stub output"
+  SHOT_LIST+=$'\n'"- \`$(basename "$f")\` (stub: ${STUB_REASON})"
+done
+[[ -z "$SHOT_LIST" ]] && SHOT_LIST=$'\n'"_No visual artifacts found (no screenshots and no browser-verify stubs)._"
 
 BLOCKERS_SNIPPET=""
 if [[ -f "$WORKDIR/.auto-pr/BLOCKERS.md" ]]; then
@@ -120,7 +128,18 @@ fi
 
 export ISSUE_NUMBER ISSUE_TITLE ISSUE_URL SPEC_SNIPPET TODO_SNIPPET SHOT_LIST BLOCKERS_SNIPPET
 
-python3 - "$TEMPLATE_DIR/PR-BODY.template.md" "$PR_BODY" <<'PY'
+PYTHON_CMD=()
+if command -v python3 >/dev/null 2>&1; then
+  PYTHON_CMD=(python3)
+elif command -v python >/dev/null 2>&1; then
+  PYTHON_CMD=(python)
+elif command -v py >/dev/null 2>&1; then
+  PYTHON_CMD=(py -3)
+else
+  agc::die "missing dependency: python3 (or python / py -3)"
+fi
+
+"${PYTHON_CMD[@]}" - "$TEMPLATE_DIR/PR-BODY.template.md" "$PR_BODY" <<'PY'
 import os, pathlib, sys
 src, dst = sys.argv[1], sys.argv[2]
 body = pathlib.Path(src).read_text()

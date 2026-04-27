@@ -6,7 +6,8 @@
 #   TARGET_REPO   "<owner>/<name>"  e.g. refly-ai/refly
 #
 # OPTIONAL:
-#   TARGET_FORK   "<owner>/<name>"  push branches here (else upstream)
+#   TARGET_FORK   "<owner>"         push branches to this fork owner (repo name follows TARGET_REPO)
+#                                   backward-compatible: "<owner>/<name>" still works
 #   AGC_BASE_BRANCH                 default: main
 #   AGC_WORK_ROOT                   default: $HOME/auto-gh-contrib-work
 #   AGC_LABELS                      comma-separated labels for issue search
@@ -56,6 +57,24 @@ agc::require_repo() {
   case "$TARGET_REPO" in
     */*) ;;
     *) agc::die "TARGET_REPO must be in <owner>/<name> form (got: $TARGET_REPO)" ;;
+  esac
+}
+
+agc::target_repo_name() {
+  printf '%s' "${TARGET_REPO#*/}"
+}
+
+agc::fork_repo() {
+  # TARGET_FORK accepts either:
+  # - owner (preferred): owner/<TARGET_REPO name>
+  # - owner/repo (legacy): used as-is
+  if [[ -z "${TARGET_FORK}" ]]; then
+    printf '%s' ""
+    return 0
+  fi
+  case "$TARGET_FORK" in
+    */*) printf '%s' "$(agc::normalize_repo "$TARGET_FORK")" ;;
+    *) printf '%s/%s' "$TARGET_FORK" "$(agc::target_repo_name)" ;;
   esac
 }
 

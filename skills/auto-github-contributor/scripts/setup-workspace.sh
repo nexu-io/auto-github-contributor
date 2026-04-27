@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Clone (or reuse) the target repo in an isolated workdir and create a feature branch.
 # Usage: setup-workspace.sh <issue-number-or-slug> [--title "<branch title>"]
-# Env:   TARGET_REPO required, TARGET_FORK optional.
+# Env:   TARGET_REPO required, TARGET_FORK optional (fork owner preferred).
 # Prints (machine-readable):
 #   WORKDIR=<abs path>
 #   BRANCH=<branch name>
@@ -68,10 +68,11 @@ git -C "$WORKDIR" pull --ff-only origin "$AGC_BASE_BRANCH"
 
 # Configure fork remote if provided.
 if [[ -n "${TARGET_FORK}" ]]; then
+  FORK_REPO="$(agc::fork_repo)"
   if git -C "$WORKDIR" remote | grep -q '^fork$'; then
-    git -C "$WORKDIR" remote set-url fork "https://github.com/${TARGET_FORK}.git"
+    git -C "$WORKDIR" remote set-url fork "https://github.com/${FORK_REPO}.git"
   else
-    git -C "$WORKDIR" remote add fork "https://github.com/${TARGET_FORK}.git"
+    git -C "$WORKDIR" remote add fork "https://github.com/${FORK_REPO}.git"
   fi
 fi
 
@@ -84,6 +85,12 @@ else
 fi
 
 mkdir -p "$WORKDIR/.auto-pr/screenshots"
+
+EXCLUDE_FILE="$WORKDIR/.git/info/exclude"
+touch "$EXCLUDE_FILE"
+if ! grep -qxF '.auto-pr/' "$EXCLUDE_FILE" 2>/dev/null; then
+  printf '\n# auto-github-contributor local workflow metadata\n.auto-pr/\n' >> "$EXCLUDE_FILE"
+fi
 
 if [[ -n "$ISSUE_JSON" ]]; then
   printf '%s\n' "$ISSUE_JSON" > "$WORKDIR/.auto-pr/issue.json"
