@@ -6,7 +6,8 @@
 # Reads:
 #   <workdir>/.auto-pr/SPEC.md
 #   <workdir>/.auto-pr/TODO.md
-#   <workdir>/.auto-pr/screenshots/*.png  (optional)
+#   <workdir>/.auto-pr/screenshots/*.png       (optional)
+#   <workdir>/.auto-pr/screenshots/*.stub.txt  (optional)
 #   <workdir>/.auto-pr/BLOCKERS.md        (optional)
 #   <workdir>/.auto-pr/issue.json         (optional — only if started from an issue)
 # Writes:
@@ -112,7 +113,13 @@ for f in "$WORKDIR"/.auto-pr/screenshots/*.png; do
   [[ -e "$f" ]] || continue
   SHOT_LIST+=$'\n'"- \`$(basename "$f")\`"
 done
-[[ -z "$SHOT_LIST" ]] && SHOT_LIST=$'\n'"_No screenshots captured (stub or non-UI change)._"
+for f in "$WORKDIR"/.auto-pr/screenshots/*.stub.txt; do
+  [[ -e "$f" ]] || continue
+  STUB_REASON="$(sed -n '1s/^# *//p' "$f" | sed -e 's/[[:space:]]*$//')"
+  [[ -z "$STUB_REASON" ]] && STUB_REASON="browser-verify stub output"
+  SHOT_LIST+=$'\n'"- \`$(basename "$f")\` (stub: ${STUB_REASON})"
+done
+[[ -z "$SHOT_LIST" ]] && SHOT_LIST=$'\n'"_No visual artifacts found (no screenshots and no browser-verify stubs)._"
 
 BLOCKERS_SNIPPET=""
 if [[ -f "$WORKDIR/.auto-pr/BLOCKERS.md" ]]; then

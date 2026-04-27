@@ -48,7 +48,7 @@ Priority order:
 
 1. If the invoking prompt passed `$ARGUMENTS`, normalize and use it as `TARGET_REPO`.
 2. Otherwise, ask the user directly for `owner/name` or a GitHub URL.
-3. Default `TARGET_FORK` to `GH_USER` when that is sensible. If the user explicitly wants no fork, leave it empty and warn that pushes will go to origin.
+3. Default `TARGET_FORK` to `GH_USER` when that is sensible. The scripts accept owner-only `TARGET_FORK` and resolve it to `GH_USER/<repo-name>`. If the user explicitly wants no fork, leave it empty and warn that pushes will go to origin.
 
 Validate with:
 
@@ -163,7 +163,7 @@ bash "$SKILL_DIR/scripts/dev-loop-check.sh" --phase green --workdir "$WORKDIR"
 bash "$SKILL_DIR/scripts/browser-verify.sh" --url "$AGC_DEV_URL" --out "$WORKDIR/.auto-pr/screenshots/<todo-slug>.png"
 ```
 
-If visual verification is still stubbed, keep going and note that in the PR body.
+`browser-verify.sh` will first try Playwright via `npx` and fall back to a stub note if no screenshot is captured. If visual verification is still stubbed, keep going and note that in the PR body.
 
 Cap the loop at 20 iterations per todo. On cap, write the blocker to `$WORKDIR/.auto-pr/BLOCKERS.md` and continue. The PR should then be draft.
 

@@ -39,7 +39,8 @@ if command -v rg >/dev/null 2>&1; then
   BACKEND="rg"
   SEARCH() {
     rg -n --no-heading --hidden \
-      --glob '!node_modules' --glob '!dist' --glob '!build' --glob '!.git' --glob '!.next' --glob '!.auto-pr' \
+      --glob '!node_modules' --glob '!dist' --glob '!build' --glob '!.git' --glob '!.next' \
+      --glob '!.auto-pr' --glob '!.auto-pr/**' --glob '!**/.auto-pr/**' \
       "$@"
   }
 else
@@ -64,6 +65,15 @@ else
     --include='*.py' --include='*.go' --include='*.rs' --include='*.java' --include='*.rb'
   )
 fi
+
+# Exclude local workflow metadata paths from findings even if backend globbing
+# behavior changes or path-like tokens appear in content.
+IS_LOCAL_METADATA_PATH() {
+  case "$1" in
+    .auto-pr|.auto-pr/*|*/.auto-pr/*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
@@ -124,6 +134,8 @@ for entry in "${TYPO_MAP[@]}"; do
   [[ -z "$matches" ]] && continue
   while IFS=: read -r file line _rest; do
     [[ -z "$file" ]] && continue
+    IS_LOCAL_METADATA_PATH "$file" && continue
+    [[ "$_rest" == *".auto-pr"* ]] && continue
     jq --arg bad "$bad" --arg good "$good" --arg file "$file" --arg line "$line" \
       '. + [{
         kind: "typo",
@@ -145,11 +157,12 @@ if [[ -d src ]] || [[ -d packages ]] || [[ -d lib ]]; then
   CANDIDATES="$(
     {
       find src packages lib -type f \( -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.jsx' \) 2>/dev/null || true
-    } | grep -Ev '(\.test\.|\.spec\.|__tests__|__mocks__|\.d\.ts$|node_modules|/dist/|/build/|/\.auto-pr/)' | head -n 200
+    } | grep -Ev '(\.test\.|\.spec\.|__tests__|__mocks__|\.d\.ts$|node_modules|/dist/|/build/|(^|/)\.auto-pr(/|$))' | head -n 200
   )"
   count=0
   while IFS= read -r src_file; do
     [[ -z "$src_file" ]] && continue
+    IS_LOCAL_METADATA_PATH "$src_file" && continue
     ((count > 6)) && break
     dir="$(dirname "$src_file")"
     base="$(basename "$src_file")"
@@ -188,6 +201,7 @@ echo "[]" > "$TMP/i18n.json"
 LOCALE_DIRS="$(find . -type d \( -name 'locales' -o -name 'locale' -o -name 'lang' -o -name 'i18n' -o -name 'translations' \) 2>/dev/null | grep -Ev 'node_modules|/dist/|/build/|/\.auto-pr/' | head -n 10)"
 while IFS= read -r dir; do
   [[ -z "$dir" ]] && continue
+  IS_LOCAL_METADATA_PATH "$dir" && continue
   JSONS="$(find "$dir" -maxdepth 2 -type f -name '*.json' 2>/dev/null | head -n 20)"
   [[ -z "$JSONS" ]] && continue
   # Find the file with the most keys (reference locale).
@@ -227,6 +241,8 @@ echo "[]" > "$TMP/todo.json"
 TODOS="$(SEARCH -e '(TODO|FIXME|XXX)[^A-Za-z0-9].{15,200}' 2>/dev/null | head -n 15 || true)"
 while IFS=: read -r file line rest; do
   [[ -z "$file" ]] && continue
+  IS_LOCAL_METADATA_PATH "$file" && continue
+  [[ "$rest" == *".auto-pr"* ]] && continue
   # Clean up the excerpt.
   excerpt="$(printf '%s' "$rest" | sed -E 's/^[[:space:]]+//' | cut -c1-160)"
   jq --arg file "$file" --arg line "$line" --arg excerpt "$excerpt" \
